@@ -30,30 +30,31 @@ class CallLog(commands.Cog):
             log("생성 완료")
     
     
+    def save_call_log(self, id: str, action: ActionType, channel: discord.VoiceChannel):
+        with open(self.CALL_LOG_PATH, 'r') as f:
+            call_log: dict[str, list] = json.load(f)
+        
+        if id not in call_log:
+            call_log[id] = []
+        data = {"time": int(time.time()), "action": action.value, "channel": channel.id}
+        call_log[id].append(data)
+        
+        log(f"{CallLog.__name__} - {data}, 저장 중...")
+        with open(self.CALL_LOG_PATH, 'w') as f:
+            json.dump(call_log, f, indent=4)
+        log(f"{CallLog.__name__} - 저장 완료")
+    
+    
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         
-        def save_call_log(id: str, action: ActionType):
-            with open(self.CALL_LOG_PATH, 'r') as f:
-                call_log: dict[str, list] = json.load(f)
-            
-            if id not in call_log:
-                call_log[id] = []
-            data = {"time": int(time.time()), "action": action.value}
-            call_log[id].append(data)
-            
-            log(f"{CallLog.__name__} - {data}, 저장 중...")
-            with open(self.CALL_LOG_PATH, 'w') as f:
-                json.dump(call_log, f, indent=4)
-            log(f"{CallLog.__name__} - 저장 완료")
-        
         # on join
         if before.channel is None and after.channel is not None:
-            save_call_log(str(member.id), ActionType.JOIN)
+            self.save_call_log(str(member.id), ActionType.JOIN, after.channel)
         
         # on leave
         if before.channel is not None and after.channel is None:
-            save_call_log(str(member.id), ActionType.LEAVE)
+            self.save_call_log(str(member.id), ActionType.LEAVE, before.channel)
     
     
     @commands.slash_command(name="기록조회", description="(Owner 전용)")
