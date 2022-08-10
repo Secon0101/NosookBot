@@ -12,6 +12,7 @@ bot = discord.Bot(owner_ids=[540481950763319317, 718285849888030720], debug_guil
 @bot.event
 async def on_ready():
     log(f"{bot.user}(으)로 로그인 (서버 {len(bot.guilds)}개)\n")
+    await bot.change_presence(activity=discord.Game(name="노숙"))
 
 
 log("Cogs 로드 중...")
