@@ -75,6 +75,7 @@ class CallLog(commands.Cog):
     
     @commands.slash_command(name="통계", description="최근 22시간의 모든 유저의 통화방 접속 여부를 조회합니다.")
     async def slash_view_stats(self, ctx: discord.ApplicationContext):
+        log(f"{CallLog.__name__} - {ctx.author.name}({ctx.author.id})(이)가 /{ctx.command.name} 사용")
         respond = await ctx.respond("*임베드 생성 중...*")
         call_log = self.get_call_log()
         
