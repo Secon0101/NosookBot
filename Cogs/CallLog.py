@@ -82,8 +82,7 @@ class CallLog(commands.Cog):
         
         INTERVAL = 60 * 60  # 한 시간 간격
         TIME_COUNT = 22  # 최근 22시간을 계산 (이 이상은 임베드가 짤림)
-        # current = int(time.time())  # 명령어 실행 시각 (측정 시각)
-        current = 1660166760
+        current = int(time.time())  # 명령어 실행 시각 (측정 시각)
         timeline = dict(zip(call_log.keys(), [""] * len(call_log)))  # 유저별 통화 여부가 기록된 문자열 (이모지)
         last_state = dict(zip(call_log.keys(), [ActionType.UNKNOWN] * len(call_log)))  # 이전 상태 저장
         
