@@ -41,6 +41,7 @@ class CallLog(commands.Cog):
             call_log = json.load(f)
         return call_log
     
+    
     def update_call_log(self, id: str, action: ActionType, channel: discord.VoiceChannel):
         """ 통화 기록을 업데이트하고 저장한다. """
         call_log = self.get_call_log()
