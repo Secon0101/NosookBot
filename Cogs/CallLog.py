@@ -74,14 +74,14 @@ class CallLog(commands.Cog):
         await ctx.respond(file=discord.File(self.CALL_LOG_PATH))
     
     
-    @commands.slash_command(name="통계", description="최근 22시간의 모든 유저의 통화방 접속 여부를 조회합니다.")
-    async def slash_view_stats(self, ctx: discord.ApplicationContext):
+    @commands.slash_command(name="통계", description="모든 유저의 최근 통화방 접속 기록을 조회합니다.")
+    async def slash_view_stats(self, ctx: discord.ApplicationContext, time_count: discord.Option(int, "최근 n시간의 기록 조회", min_value=1, max_value=24, default=22)):
         log(f"{CallLog.__name__} - {ctx.author.name}({ctx.author.id})(이)가 /{ctx.command.name} 사용")
-        respond = await ctx.respond("*임베드 생성 중...*")
+        embed = discord.Embed(description="*임베드 생성 중...*")
+        respond = await ctx.respond(embed=embed)
         call_log = self.get_call_log()
         
         INTERVAL = 60 * 60  # 한 시간 간격
-        TIME_COUNT = 22  # 최근 22시간을 계산 (이 이상은 임베드가 짤림)
         current = int(time.time())  # 명령어 실행 시각 (측정 시각)
         timeline = dict(zip(call_log.keys(), [""] * len(call_log)))  # 유저별 통화 여부가 기록된 문자열 (이모지)
         last_state = dict(zip(call_log.keys(), [ActionType.UNKNOWN] * len(call_log)))  # 이전 상태 저장
@@ -101,7 +101,7 @@ class CallLog(commands.Cog):
         ## 모든 유저의 시간대별 상태 기록
         for id in call_log.keys():
             
-            t = current - (current % INTERVAL) - (TIME_COUNT-1) * INTERVAL  # t ~ t+INTERVAL 사이의 액션(한 칸)을 측정한다
+            t = current - (current % INTERVAL) - (time_count-1) * INTERVAL  # t ~ t+INTERVAL 사이의 액션(한 칸)을 측정한다
             
             ## 유저의 모든 액션 조회 (시간순으로 정렬됨)
             for action in call_log[id]:
@@ -170,7 +170,8 @@ class CallLog(commands.Cog):
         """
         
         ## 출력
-        embed = discord.Embed(title=f"최근 {TIME_COUNT}시간의 통화방 접속 기록")
+        embed.title = f"최근 {time_count}시간의 통화방 접속 기록"
+        embed.description = None
         
         users: list[discord.User] = []
         for id in call_log.keys():
@@ -182,7 +183,7 @@ class CallLog(commands.Cog):
         
         hour = datetime.fromtimestamp(current, timezone('Asia/Seoul')).hour
         clock, i = "", hour
-        for _ in range(TIME_COUNT):
+        for _ in range(time_count):
             clock = self.CLOCK_ICONS[i] + clock
             i = (i - 1) % 24
         timeline_str = '\n'.join([clock] + [timeline[id] for id in timeline.keys()])
