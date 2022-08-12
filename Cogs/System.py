@@ -15,7 +15,7 @@ class System(commands.Cog):
         for cog in get_cogs():
             self.bot.unload_extension(cog)
             self.bot.load_extension(cog)
-        log("리로드 완료")
+        log("리로드 완료", newline=True)
         respond = await ctx.respond("🔄 봇을 리로드하였습니다.")
         await respond.delete_original_message(delay=2)
 
