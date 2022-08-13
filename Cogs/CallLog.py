@@ -5,7 +5,6 @@ import time
 from enum import Enum
 from datetime import datetime
 from pytz import timezone
-import firebase_admin as firebase
 from firebase_admin import db
 
 
@@ -23,9 +22,6 @@ class CallLog(commands.Cog):
     
     def __init__(self, bot: discord.Bot):
         self.bot = bot
-        
-        cred = firebase.credentials.Certificate('firebase-admin.json')
-        firebase.initialize_app(cred, { "databaseURL": "https://nosookbot-default-rtdb.firebaseio.com" })
     
     
     def get_call_log(self) -> dict[str, dict[str, dict]]:
@@ -41,9 +37,8 @@ class CallLog(commands.Cog):
             "action": action.value,
             "channel": channel.id
         }
-        log(f'{CallLog.__name__} - "{action_time}": {data} 저장 중...')
         db.reference(f'call_log/{user_id}').update({ action_time: data })
-        log(f'{CallLog.__name__} - "{action_time}": {data} 저장 완료')
+        log(f"{CallLog.__name__} - {user_id} + {{'{action_time}': {data}}}")
     
     
     @commands.Cog.listener()
