@@ -1,3 +1,4 @@
 py-cord
 pytz
 python-dotenv
+firebase_admin
