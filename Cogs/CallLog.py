@@ -37,12 +37,13 @@ class CallLog(commands.Cog):
     def update_call_log(self, user_id: int, action: ActionType, channel: discord.VoiceChannel):
         """ 통화 기록을 업데이트하고 저장한다. """
         action_time = int(time.time())
-        db.reference(f'call_log/{user_id}').update({
-            action_time: {
-                "action": action.value,
-                "channel": channel.id
-            }
-        })
+        data = {
+            "action": action.value,
+            "channel": channel.id
+        }
+        log(f'{CallLog.__name__} - "{action_time}": {data} 저장 중...')
+        db.reference(f'call_log/{user_id}').update({ action_time: data })
+        log(f'{CallLog.__name__} - "{action_time}": {data} 저장 완료')
     
     
     @commands.Cog.listener()
