@@ -7,7 +7,6 @@ class Core(commands.Cog):
     """ 노숙봇 핵심 기능들 """
     def __init__(self, bot: discord.Bot):
         self.bot = bot
-        self.version = "0.1"
     
     
     @commands.Cog.listener()
@@ -31,7 +30,8 @@ class Core(commands.Cog):
     @commands.slash_command(name="노숙봇", description="노숙 하는 중")
     async def slash_info(self, ctx: discord.ApplicationContext):
         log(f"{Core.__name__} - {ctx.author.name}({ctx.author.id})(이)가 /{ctx.command.name} 사용")
-        embed = discord.Embed(title="노숙봇", description=f"v{self.version}")
+        embed = discord.Embed(title="노숙봇")
+        embed.add_field(name="0.2", value="데이터베이스 연동")  # 봇 버전
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         await ctx.respond(embed=embed)
 

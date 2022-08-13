@@ -1,10 +1,12 @@
 import discord
 from discord.ext import commands
 from utility import log
-import time, json, os
+import time
 from enum import Enum
 from datetime import datetime
 from pytz import timezone
+import firebase_admin as firebase
+from firebase_admin import db
 
 
 class ActionType(Enum):
@@ -16,62 +18,41 @@ class ActionType(Enum):
 
 class CallLog(commands.Cog):
     
-    CALL_LOG_PATH = 'Data/call_log.json'
     CLOCK_ICONS = "🕧🕜🕝🕞🕟🕠🕡🕢🕣🕤🕥🕦🕧🕜🕝🕞🕟🕠🕡🕢🕣🕤🕥🕦"
     
     
     def __init__(self, bot: discord.Bot):
         self.bot = bot
         
-        # 파일 검사
-        if not os.path.exists("Data"):
-            log("Data 폴더가 없습니다. 생성 중...")
-            os.mkdir("Data")
-            log("생성 완료")
-        if not os.path.exists(self.CALL_LOG_PATH):
-            log("call_log.json 파일이 없습니다. 생성 중...")
-            with open(self.CALL_LOG_PATH, 'w') as f:
-                json.dump({}, f)
-            log("생성 완료")
+        cred = firebase.credentials.Certificate('firebase-admin.json')
+        firebase.initialize_app(cred, { "databaseURL": "https://nosookbot-default-rtdb.firebaseio.com" })
     
     
-    def get_call_log(self) -> dict[str, list[dict]]:
+    def get_call_log(self) -> dict[str, dict[str, dict]]:
         """ 통화 기록 파일을 불러온다. """
-        with open(self.CALL_LOG_PATH, 'r') as f:
-            call_log = json.load(f)
+        call_log = db.reference('call_log').get()
         return call_log
     
     
-    def update_call_log(self, id: str, action: ActionType, channel: discord.VoiceChannel):
+    def update_call_log(self, user_id: int, action: ActionType, channel: discord.VoiceChannel):
         """ 통화 기록을 업데이트하고 저장한다. """
-        call_log = self.get_call_log()
-        
-        if id not in call_log:
-            call_log[id] = []
-        data = {"time": int(time.time()), "action": action.value, "channel": channel.id}
-        call_log[id].append(data)
-        
-        log(f"{CallLog.__name__} - {data}, 저장 중...")
-        with open(self.CALL_LOG_PATH, 'w') as f:
-            json.dump(call_log, f, indent=4)
-        log(f"{CallLog.__name__} - 저장 완료")
+        action_time = int(time.time())
+        db.reference(f'call_log/{user_id}').update({
+            action_time: {
+                "action": action.value,
+                "channel": channel.id
+            }
+        })
     
     
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         # on join
         if before.channel is None and after.channel is not None:
-            self.update_call_log(str(member.id), ActionType.JOIN, after.channel)
+            self.update_call_log(member.id, ActionType.JOIN, after.channel)
         # on leave
         if before.channel is not None and after.channel is None:
-            self.update_call_log(str(member.id), ActionType.LEAVE, before.channel)
-    
-    
-    @commands.slash_command(name="파일조회", description="(Owner 전용)")
-    @commands.is_owner()
-    async def slash_view_log_file(self, ctx: discord.ApplicationContext):
-        log(f"{CallLog.__name__} - {ctx.author.name}({ctx.author.id})(이)가 /{ctx.command.name} 사용")
-        await ctx.respond(file=discord.File(self.CALL_LOG_PATH))
+            self.update_call_log(member.id, ActionType.LEAVE, before.channel)
     
     
     @commands.slash_command(name="통계", description="모든 유저의 최근 통화방 접속 기록을 조회합니다.")
@@ -86,50 +67,50 @@ class CallLog(commands.Cog):
         timeline = dict(zip(call_log.keys(), [""] * len(call_log)))  # 유저별 통화 여부가 기록된 문자열 (이모지)
         last_state = dict(zip(call_log.keys(), [ActionType.UNKNOWN] * len(call_log)))  # 이전 상태 저장
         
-        def add_state(id: str, action: ActionType):
+        def add_state(user_id: str, action: ActionType):
             """ 이번 시간의 통화 상태를 기록하고 t에 INTERVAL을 더한다. """
             match action:
                 case ActionType.JOIN:
-                    timeline[id] += '🟩'
+                    timeline[user_id] += '🟩'
                 case ActionType.OTHER_SERVER:
-                    timeline[id] += '🟧'
+                    timeline[user_id] += '🟧'
                 case ActionType.LEAVE:
-                    timeline[id] += '⬛'
+                    timeline[user_id] += '⬛'
                 case ActionType.UNKNOWN:
-                    timeline[id] += '▪️'
+                    timeline[user_id] += '▪️'
         
         ## 모든 유저의 시간대별 상태 기록
-        for id in call_log.keys():
+        for user_id in call_log.keys():
             
             t = current - (current % INTERVAL) - (time_count-1) * INTERVAL  # t ~ t+INTERVAL 사이의 액션(한 칸)을 측정한다
             
             ## 유저의 모든 액션 조회 (시간순으로 정렬됨)
-            for action in call_log[id]:
-                if t <= action["time"]:  # 측정할 시간보다도 이전에 있는 이벤트는 제외
+            actions = call_log[user_id]
+            for action_time in actions.keys():
+                if t <= int(action_time):  # 측정할 시간보다도 이전에 있는 이벤트는 제외
                     ## 시간 구간 내에 액션이 없을 경우 이전 상태를 전부 채운다
-                    if t + INTERVAL <= action["time"]:
-                        while t < action["time"] - action["time"] % INTERVAL:
-                            add_state(id, last_state[id])
+                    if t + INTERVAL <= int(action_time):
+                        while t < int(action_time) - int(action_time) % INTERVAL:
+                            add_state(user_id, last_state[user_id])
                             t += INTERVAL
                     
                     ## 이벤트가 일어난 전후에는 반드시 JOIN이 존재한다 (예외: 정시에 퇴장)
-                    if action["action"] == ActionType.LEAVE and action["time"] % INTERVAL == 0:
-                        add_state(id, ActionType.LEAVE)
+                    if actions[action_time]["action"] == ActionType.LEAVE and int(action_time) % INTERVAL == 0:
+                        add_state(user_id, ActionType.LEAVE)
                         t += INTERVAL
                     else:
-                        add_state(id, ActionType.JOIN)
+                        add_state(user_id, ActionType.JOIN)
                         t += INTERVAL
                 
                 ## 이전 상태 저장
-                last_state[id] = ActionType(action["action"])
+                last_state[user_id] = ActionType(actions[action_time]["action"])
             
             ## 마지막 액션 이후 시간은 이전 상태 유지
             while t <= current:
-                add_state(id, last_state[id])
+                add_state(user_id, last_state[user_id])
                 t += INTERVAL
         
-        # // (아래는 이전 코드)
-        """
+        """ # // (아래는 이전 코드)
         for t in range(current - TIME_COUNT * INTERVAL, current, INTERVAL):
             for id in call_log.keys():  # 유저마다
                 
@@ -174,8 +155,8 @@ class CallLog(commands.Cog):
         embed.description = None
         
         users: list[discord.User] = []
-        for id in call_log.keys():
-            user = await self.bot.fetch_user(int(id))
+        for user_id in call_log.keys():
+            user = await self.bot.fetch_user(int(user_id))
             if user is None: continue
             users.append(user)
         user_str = '\n'.join(['ㅤ'] + [user.name for user in users])
