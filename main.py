@@ -9,7 +9,7 @@ import firebase_admin as firebase
 log("로딩...", newline=True)
 
 dev = len(argv) >= 2 and argv[1] == "dev"
-bot = discord.Bot(owner_ids=[540481950763319317, 718285849888030720], debug_guilds=[741194068939243531] if dev else None)
+bot = discord.Bot(owner_ids=[540481950763319317, 718285849888030720], debug_guilds=[741194068939243531] if dev else None, intents=discord.Intents.all())
 
 # 데이터베이스 로드
 cred = firebase.credentials.Certificate('firebase-admin.json')
