@@ -53,7 +53,7 @@ class CallLog(commands.Cog):
     
     @commands.slash_command(name="통계", description="모든 유저의 최근 통화방 접속 기록을 조회합니다.")
     async def slash_view_stats(self, ctx: discord.ApplicationContext,
-        time_count: discord.Option(int, "최근 n시간의 기록 조회", min_value=1, max_value=24, default=12)
+        time_count: discord.Option(int, "최근 n시간의 기록 조회 (수가 클 경우 임베드가 잘릴 수 있음)", min_value=1, max_value=24, default=12)
     ):
         log(f"{CallLog.__name__} - {ctx.author.name}({ctx.author.id})(이)가 /{ctx.command.name} 사용")
         embed = discord.Embed(description="*임베드 생성 중...*", color=0x78b159)
