@@ -52,24 +52,29 @@ class CallLog(commands.Cog):
     
     
     @commands.slash_command(name="통계", description="모든 유저의 최근 통화방 접속 기록을 조회합니다.")
-    async def slash_view_stats(self, ctx: discord.ApplicationContext, time_count: discord.Option(int, "최근 n시간의 기록 조회", min_value=1, max_value=24, default=22)):
+    async def slash_view_stats(self, ctx: discord.ApplicationContext,
+        time_count: discord.Option(int, "최근 n시간의 기록 조회", min_value=1, max_value=24, default=12)
+    ):
         log(f"{CallLog.__name__} - {ctx.author.name}({ctx.author.id})(이)가 /{ctx.command.name} 사용")
-        embed = discord.Embed(description="*임베드 생성 중...*")
+        embed = discord.Embed(description="*임베드 생성 중...*", color=0x78b159)
         respond = await ctx.respond(embed=embed)
         call_log = self.get_call_log()
         
         INTERVAL = 60 * 60  # 한 시간 간격
         current = int(time.time())  # 명령어 실행 시각 (측정 시각)
-        timeline = dict(zip(call_log.keys(), [""] * len(call_log)))  # 유저별 통화 여부가 기록된 문자열 (이모지)
         last_state = dict(zip(call_log.keys(), [ActionType.UNKNOWN] * len(call_log)))  # 이전 상태 저장
+        timeline = dict(zip(call_log.keys(), [""] * len(call_log)))  # 유저별 통화 여부가 기록된 문자열 (이모지)
+        joined = dict(zip(call_log.keys(), [False] * len(call_log)))  # 시간 구간 내 접속 여부
         
         def add_state(user_id: str, action: ActionType):
             """ 이번 시간의 통화 상태를 기록하고 t에 INTERVAL을 더한다. """
             match action:
                 case ActionType.JOIN:
                     timeline[user_id] += '🟩'
+                    joined[user_id] = True
                 case ActionType.OTHER_SERVER:
                     timeline[user_id] += '🟧'
+                    joined[user_id] = True
                 case ActionType.LEAVE:
                     timeline[user_id] += '⬛'
                 case ActionType.UNKNOWN:
@@ -93,10 +98,9 @@ class CallLog(commands.Cog):
                     ## 이벤트가 일어난 전후에는 반드시 JOIN이 존재한다 (예외: 정시에 퇴장)
                     if actions[action_time]["action"] == ActionType.LEAVE and int(action_time) % INTERVAL == 0:
                         add_state(user_id, ActionType.LEAVE)
-                        t += INTERVAL
                     else:
                         add_state(user_id, ActionType.JOIN)
-                        t += INTERVAL
+                    t += INTERVAL
                 
                 ## 이전 상태 저장
                 last_state[user_id] = ActionType(actions[action_time]["action"])
@@ -150,25 +154,24 @@ class CallLog(commands.Cog):
         embed.title = f"최근 {time_count}시간의 통화방 접속 기록"
         embed.description = None
         
-        users: list[discord.User] = []
-        for user_id in call_log.keys():
+        user_ids = [id for id in call_log.keys() if joined[id]]  # 접속했던 유저만 표시
+        users = []
+        for user_id in user_ids:
             user = await self.bot.fetch_user(int(user_id))
-            if user is None: continue
-            users.append(user)
-        user_str = '\n'.join(['ㅤ'] + [user.name for user in users])
-        embed.add_field(name="유저", value=user_str)
+            if user is not None:
+                users.append(user.name)
+        embed.add_field(name="유저", value='\n'.join(users))
         
         hour = datetime.fromtimestamp(current, timezone('Asia/Seoul')).hour
         clock, i = "", hour
         for _ in range(time_count):
             clock = self.CLOCK_ICONS[i] + clock
             i = (i - 1) % 24
-        timeline_str = '\n'.join([clock] + [timeline[id] for id in timeline.keys()])
-        embed.add_field(name="타임라인", value=timeline_str)
+        embed.add_field(name=clock, value='\n'.join([timeline[id] for id in user_ids]))
         
-        embed.set_footer(text="🟩 통화 중  ⬛ 나감  ▪️ 알 수 없음", icon_url=self.bot.user.display_avatar.url)
-        
-        await respond.edit_original_message(content=None, embed=embed)
+        embed.set_footer(text="🟩 통화 중  ⬛ 나감  ▪️ 알 수 없음", icon_url=self.bot.user.display_avatar.url, )
+        embed.timestamp = datetime.now(timezone('Asia/Seoul'))
+        await respond.edit_original_message(embed=embed)
 
 
 def setup(bot: discord.Bot):
