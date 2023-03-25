@@ -51,7 +51,7 @@ class CallLog(commands.Cog):
             self.update_call_log(member.id, ActionType.LEAVE, before.channel)
     
     
-    async def make_timeline_embed(self, time_count: int) -> discord.Embed:
+    def make_timeline_embed(self, time_count: int) -> discord.Embed:
         """ 통화방 접속 기록 임베드를 생성한다. """
         embed = discord.Embed(title=f"최근 {time_count}시간의 통화방 접속 기록", color=0x78b159)
         call_log = self.get_call_log()
@@ -130,16 +130,16 @@ class CallLog(commands.Cog):
     async def slash_view_stats(self, ctx: discord.ApplicationContext,
         time_count: discord.Option(int, "최근 n시간의 기록 조회 (수가 클 경우 임베드가 잘릴 수 있음)", min_value=1, max_value=24, default=12)
     ):
-        log(f"{CallLog.__name__} - {ctx.author.name}({ctx.author.id})(이)가 /{ctx.command.name} 사용")
+        log(f"{CallLog.__name__} - {ctx.author.name}({ctx.author.id}) used /{ctx.command.name}")
         embed = discord.Embed(description="*임베드 생성 중...*", color=0x78b159)
         respond = await ctx.respond(embed=embed)
-        embed = await self.make_timeline_embed(time_count)
+        embed = self.make_timeline_embed(time_count)
         await respond.edit_original_response(embed=embed)
 
 
 def setup(bot: discord.Bot):
     try:
         bot.add_cog(CallLog(bot))
-        log(f"{CallLog.__name__} 로드")
+        log(f"Module {CallLog.__name__} loaded")
     except Exception as e:
-        log(f"{CallLog.__name__} 로드 실패: \n{e}")
+        log(f"Failed to load module {CallLog.__name__}: \n{e}")
