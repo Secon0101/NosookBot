@@ -3,9 +3,11 @@ from pytz import timezone
 from os import listdir
 
 
-def log(ctx: str, newline: bool = False):
+def log(ctx: str, newline: int = 0):
     time = datetime.now(timezone('Asia/Seoul')).strftime("%y/%m/%d %H:%M:%S")
-    if newline: print()
+    while newline > 0:
+        print()
+        newline -= 1
     print(f"[{time}] {ctx}")
 
 def get_cogs() -> list[str]:
