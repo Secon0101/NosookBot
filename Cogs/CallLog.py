@@ -51,19 +51,19 @@ class CallLog(commands.Cog):
             self.update_call_log(member.id, ActionType.LEAVE, before.channel)
     
     
-    def make_timeline_embed(self, time_count: int) -> discord.Embed:
+    async def make_timeline_embed(self, time_count: int) -> discord.Embed:
         """ 통화방 접속 기록 임베드를 생성한다. """
         embed = discord.Embed(title=f"최근 {time_count}시간의 통화방 접속 기록", color=0x78b159)
         call_log = self.get_call_log()
         
-        INTERVAL = 60 * 60  # 한 시간 간격
+        interval = 60 * 60  # 한 시간 간격
         current = int(time.time())  # 명령어 실행 시각 (측정 시각)
         last_state = dict(zip(call_log.keys(), [ActionType.UNKNOWN] * len(call_log)))  # 이전 상태 저장
         timeline = dict(zip(call_log.keys(), [""] * len(call_log)))  # 유저별 통화 여부가 기록된 문자열 (이모지)
         joined = dict(zip(call_log.keys(), [False] * len(call_log)))  # 시간 구간 내 접속 여부
         
         def add_state(user_id: str, action: ActionType):
-            """ 이번 시간의 통화 상태를 기록하고 t에 INTERVAL을 더한다. """
+            """ 이번 시간의 통화 상태를 기록하고 t에 interval을 더한다. """
             nonlocal t
             match action:
                 case ActionType.JOIN:
@@ -76,24 +76,24 @@ class CallLog(commands.Cog):
                     timeline[user_id] += '⬛'
                 case ActionType.UNKNOWN:
                     timeline[user_id] += '▪️'
-            t += INTERVAL
+            t += interval
         
         ## 모든 유저의 시간대별 상태 기록
         for user_id in call_log.keys():
             
-            t = current - (current % INTERVAL) - (time_count-1) * INTERVAL  # t ~ t+INTERVAL 사이의 액션(한 칸)을 측정한다
+            t = current - (current % interval) - (time_count - 1) * interval  # t ~ t+interval 사이의 액션(한 칸)을 측정한다
             
             ## 유저의 모든 액션 조회 (시간순으로 정렬됨)
             actions = call_log[user_id]
             for action_time in actions.keys():
                 if t <= int(action_time):  # 측정할 시간보다도 이전에 있는 이벤트는 제외
                     ## 시간 구간 내에 액션이 없을 경우 이전 상태를 전부 채운다
-                    if t + INTERVAL <= int(action_time):
-                        while t < int(action_time) - int(action_time) % INTERVAL:
+                    if t + interval <= int(action_time):
+                        while t < int(action_time) - int(action_time) % interval:
                             add_state(user_id, last_state[user_id])
                     
                     ## 이벤트가 일어난 전후에는 반드시 JOIN이 존재한다 (예외: 정시에 퇴장)
-                    if actions[action_time]["action"] == ActionType.LEAVE and int(action_time) % INTERVAL == 0:
+                    if actions[action_time]["action"] == ActionType.LEAVE and int(action_time) % interval == 0:
                         add_state(user_id, ActionType.LEAVE)
                     else:
                         add_state(user_id, ActionType.JOIN)
@@ -133,7 +133,7 @@ class CallLog(commands.Cog):
         log(f"{CallLog.__name__} - {ctx.author.name}({ctx.author.id}) used /{ctx.command.name}")
         embed = discord.Embed(description="*임베드 생성 중...*", color=0x78b159)
         respond = await ctx.respond(embed=embed)
-        embed = self.make_timeline_embed(time_count)
+        embed = await self.make_timeline_embed(time_count)
         await respond.edit_original_response(embed=embed)
 
 
