@@ -52,7 +52,7 @@ jobs:
       - name: Setting .env
         run: |
           echo "TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
-          echo "FIREBASE_ADMIN=${{ secrets.FIREBASE_ADMIN_BASE64 }}" > .env
+          echo "FIREBASE_ADMIN=${{ secrets.FIREBASE_ADMIN_BASE64 }}" >> .env
       - name: Docker run
         run: |
           docker stop ${{ env.NAME }} && docker rm ${{ env.NAME }} && docker rmi ${{ env.DOCKER_IMAGE }}:latest
