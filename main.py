@@ -22,7 +22,6 @@ if not os.path.exists(filename):
     from base64 import b64decode
     with open(filename, 'w') as f:
         text = b64decode(os.getenv("FIREBASE_ADMIN")).decode("utf-8")
-        log(text)
         f.write(text)
 
 cred = firebase.credentials.Certificate(filename)
