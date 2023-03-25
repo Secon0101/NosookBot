@@ -52,11 +52,11 @@ jobs:
       - name: Setting .env
         run: |
           echo "TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
-          echo ${{ secrets.FIREBASE_ADMIN_BASE64 }} | base64 --decode > firebase-admin.json
+          echo "FIREBASE_ADMIN=${{ secrets.FIREBASE_ADMIN_BASE64 }}" > .env
       - name: Docker run
         run: |
           docker stop ${{ env.NAME }} && docker rm ${{ env.NAME }} && docker rmi ${{ env.DOCKER_IMAGE }}:latest
           docker run -d --env-file=.env --name ${{ env.NAME }} --restart always ${{ env.DOCKER_IMAGE }}:latest
-#       - name: Remove .env file
-#         run: |
-#           rm -rf .env
+      - name: Remove .env file
+        run: |
+          rm -rf .env
