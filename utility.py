@@ -8,7 +8,6 @@ def log(ctx: str, newline: bool = False):
     if newline: print()
     print(f"[{time}] {ctx}")
 
-
 def get_cogs() -> list[str]:
     cogs = []
     for file in listdir("Cogs"):

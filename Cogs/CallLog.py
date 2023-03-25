@@ -105,7 +105,7 @@ class CallLog(commands.Cog):
             while t <= current:
                 add_state(user_id, last_state[user_id])
         
-        user_ids = [id for id in call_log.keys() if joined[id]]  # 접속했던 유저만 표시
+        user_ids = (id for id in call_log.keys() if joined[id])  # 접속했던 유저만 표시
         users = []
         for user_id in user_ids:
             user = await self.bot.fetch_user(int(user_id))
@@ -118,7 +118,7 @@ class CallLog(commands.Cog):
         for _ in range(time_count):
             clock = self.CLOCK_ICONS[i] + clock
             i = (i - 1) % 24
-        embed.add_field(name=clock, value='\n'.join([timeline[id] for id in user_ids]))
+        embed.add_field(name=clock, value='\n'.join((timeline[id] for id in user_ids)))
         
         embed.set_footer(text="🟩 통화 중  ⬛ 나감  ▪️ 알 수 없음", icon_url=self.bot.user.display_avatar.url, )
         embed.timestamp = datetime.now(timezone('Asia/Seoul'))
@@ -134,7 +134,7 @@ class CallLog(commands.Cog):
         embed = discord.Embed(description="*임베드 생성 중...*", color=0x78b159)
         respond = await ctx.respond(embed=embed)
         embed = await self.make_timeline_embed(time_count)
-        await respond.edit_original_message(embed=embed)
+        await respond.edit_original_response(embed=embed)
 
 
 def setup(bot: discord.Bot):

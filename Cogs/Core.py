@@ -33,7 +33,8 @@ class Core(commands.Cog):
         embed = discord.Embed(title="노숙봇", color=0x78b159)
         embed.add_field(name="v0.3", value="- 시간 구간 내에 통화 기록이 없는 사용자 숨김 \n- 임베드에 타임스탬프 추가")  # 봇 버전
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
-        embed.set_footer(text=f"Made by {self.bot.get_user(self.bot.owner_ids[0])}", icon_url=self.bot.get_user(self.bot.owner_ids[0]).avatar.url)
+        embed.set_footer(text=f"Made by {self.bot.get_user(self.bot.owner_ids[0])}",
+                         icon_url=self.bot.get_user(self.bot.owner_ids[0]).avatar.url)
         await ctx.respond(embed=embed)
 
 
