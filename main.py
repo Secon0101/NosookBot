@@ -6,10 +6,8 @@ from dotenv import load_dotenv
 from utility import get_cogs, log
 
 
-log("로딩...", newline=2)
-log(f"pwd - {os.getcwd()}")
-log(f"path - {sys.path}")
-log(f"argv - {sys.argv}")
+log("로딩...", newline=True)
+log(os.listdir())
 
 dev = len(sys.argv) >= 2 and sys.argv[1] == "dev"
 bot = discord.Bot(owner_ids=[540481950763319317, 718285849888030720],
