@@ -3,10 +3,10 @@ import sys
 import os
 import firebase_admin as firebase
 from dotenv import load_dotenv
-from utility import get_cogs, log
+from utility import log_print, get_cogs
 
 
-log("Loading...", newline=True)
+log_print("Loading...", newline=True)
 
 # 테스트 모드이면 True (> python main.py dev)
 dev = len(sys.argv) >= 2 and sys.argv[1] == "dev"
@@ -35,5 +35,5 @@ bot.load_extensions(*get_cogs())
 token = os.getenv("TOKEN_ALPHA" if dev else "TOKEN")
 
 # 봇 실행
-log("Logging in...")
+log_print("Logging in...")
 bot.run(token)
