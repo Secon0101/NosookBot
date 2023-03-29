@@ -52,7 +52,7 @@ jobs:
       - name: Setting .env
         run: |
           echo "TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
-          echo "FIREBASE_ADMIN=${{ secrets.FIREBASE_ADMIN_BASE64 }}" >> .env
+          echo "FIREBASE_ADMIN_BASE64=${{ secrets.FIREBASE_ADMIN_BASE64 }}" >> .env
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
       - name: Docker run
         run: |
