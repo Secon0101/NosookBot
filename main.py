@@ -1,6 +1,7 @@
 import discord
 import sys
 import os
+from base64 import b64decode
 import firebase_admin as firebase
 from dotenv import load_dotenv
 from utility import log_print, get_cogs
@@ -17,15 +18,13 @@ bot = discord.Bot(owner_ids=[540481950763319317, 718285849888030720],
 load_dotenv()
 
 # 파이어베이스
-filename = "firebase-admin.json"
-if not os.path.exists(filename):
-    from base64 import b64decode
-    with open(filename, 'w') as f:
-        text = b64decode(os.getenv("FIREBASE_ADMIN")).decode("utf-8")
-        f.write(text)
+fb_admin_file = "firebase-admin.json"
+if not os.path.exists(fb_admin_file):
+    with open(fb_admin_file, 'w') as f:
+        f.write(b64decode(os.getenv("FIREBASE_ADMIN_BASE64")).decode("utf-8"))
 
-cred = firebase.credentials.Certificate(filename)
-options = { "databaseURL": "https://nosookbot-default-rtdb.firebaseio.com" }
+cred = firebase.credentials.Certificate(fb_admin_file)
+options = { "databaseURL": os.getenv("DATABASE_URL") }
 firebase.initialize_app(cred, options)
 
 # 커맨드 불러오기

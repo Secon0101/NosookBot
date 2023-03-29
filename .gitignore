@@ -6,3 +6,4 @@ venv/
 
 .env
 firebase-admin.json
+database_url.txt
