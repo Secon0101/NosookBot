@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from utility import log, log_print
-import time
+from time import time
 from enum import Enum
 from datetime import datetime
 from pytz import timezone
@@ -35,7 +35,7 @@ class CallLog(commands.Cog):
     @staticmethod
     def update_call_log(user_id: int, action: ActionType, channel: discord.VoiceChannel):
         """ 통화 기록을 업데이트하고 저장한다. """
-        action_time = int(time.time())
+        action_time = int(time())
         data = {
             "action": action.value,
             "channel": channel.id
@@ -60,7 +60,7 @@ class CallLog(commands.Cog):
         call_log = self.get_call_log()
         
         interval = 60 * 60  # 한 시간 간격
-        current = int(time.time())  # 명령어 실행 시각 (측정 시각)
+        current = int(time())  # 명령어 실행 시각 (측정 시각)
         last_state = dict(zip(call_log.keys(), [ActionType.UNKNOWN] * len(call_log)))  # 이전 상태 저장
         timeline = dict(zip(call_log.keys(), [""] * len(call_log)))  # 유저별 통화 여부가 기록된 문자열 (이모지)
         joined = dict(zip(call_log.keys(), [False] * len(call_log)))  # 시간 구간 내 접속 여부
