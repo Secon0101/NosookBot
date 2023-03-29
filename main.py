@@ -27,9 +27,6 @@ if not exists(fb_admin_file):
         f.write(b64decode(getenv("FIREBASE_ADMIN_BASE64")).decode("utf-8"))
     log_print("Created firebase-admin.json")
 
-with open(fb_admin_file, 'r') as f:  # debug!!!!!!!!!!!!
-    log_print(f.read())
-
 cred = firebase.credentials.Certificate(fb_admin_file)
 options = { "databaseURL": getenv("DATABASE_URL") }
 firebase.initialize_app(cred, options)
