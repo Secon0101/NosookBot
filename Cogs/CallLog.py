@@ -23,41 +23,36 @@ class CallLog(commands.Cog):
     
     def __init__(self, bot: discord.Bot):
         self.bot = bot
+        self.call_log = db.reference("call_log").get()
     
     
-    @staticmethod
-    def get_call_log() -> dict[str, dict[str, dict]]:
-        """ 통화 기록 파일을 불러온다. """
-        call_log = db.reference('call_log').get()
-        return call_log
-    
-    
-    @staticmethod
-    def update_call_log(user_id: int, action: ActionType, channel: discord.VoiceChannel):
+    async def update_call_log(self, user_id: int, action: ActionType, channel: discord.VoiceChannel):
         """ 통화 기록을 업데이트하고 저장한다. """
         action_time = int(time())
         data = {
             "action": action.value,
             "channel": channel.id
         }
-        db.reference(f'call_log/{user_id}').update({ action_time: data })
-        log(f"{CallLog.__name__} - {user_id} + {{'{action_time}': {data}}}")
+        self.call_log[user_id] = (a := { action_time : data })
+        
+        db.reference(f'call_log/{user_id}').update(a)
+        await log(f"{CallLog.__name__} - {user_id} + {{'{action_time}': {data}}}")
     
     
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         # on join
         if before.channel is None and after.channel is not None:
-            self.update_call_log(member.id, ActionType.JOIN, after.channel)
+            await self.update_call_log(member.id, ActionType.JOIN, after.channel)
         # on leave
         if before.channel is not None and after.channel is None:
-            self.update_call_log(member.id, ActionType.LEAVE, before.channel)
+            await self.update_call_log(member.id, ActionType.LEAVE, before.channel)
     
     
     async def make_timeline_embed(self, time_count: int) -> discord.Embed:
         """ 통화방 접속 기록 임베드를 생성한다. """
         embed = discord.Embed(title=f"최근 {time_count}시간의 통화방 접속 기록", color=0x78b159)
-        call_log = self.get_call_log()
+        call_log = self.call_log
         
         interval = 60 * 60  # 한 시간 간격
         current = int(time())  # 명령어 실행 시각 (측정 시각)
